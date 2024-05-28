@@ -17,7 +17,7 @@ clc;clear;close all;
 % ca8 512-1024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% add path and parametre setting
-addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\Two_classes\data\
+addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\Three_classes\data\
 addpath functions\
 fs = 250;
 fs_new = 250;
@@ -25,7 +25,7 @@ num_of_channels = 30;
 
 %% Start
 counter = 1;
-for i = 1:128
+for i = 1:162
     %% Load data
     filename = ['x', num2str(i), '.mat'];
     load(filename);
@@ -89,21 +89,24 @@ y1 = string(table2array(readtable('0_segments.xlsx','Range','C1:C42')));
 y1 = repmat(y1, num_of_channels, 1);
 y2 = string(table2array(readtable('0_segments.xlsx','Range','C42:C129')));
 y2 = repmat(y2, num_of_channels, 1);
+y3 = string(table2array(readtable('0_segments.xlsx','Range','C129:C163')));
+y3 = repmat(y3, num_of_channels, 1);
 
-y = [y1;y2];
+y = [y1;y2;y3];
 %data_labeled = [x, y];
 
 %% Partition data for cross-validation
-cv = cvpartition(length(y), 'HoldOut', 0.4);
+cv = cvpartition(length(y), 'HoldOut', 0.35);
 idxTrain = training(cv);
 x_train = x(idxTrain,:);
 y_train = y(idxTrain,:);
 x_test = x(~idxTrain,:);
 y_test = y(~idxTrain,:);
 
+idxTestOriginal = find(~idxTrain);
 
 %% Number of decision trees
-%{
+
 for i = 1:50
     % Define Bagging Parameters
     numTrees = i; % Set number of trees
@@ -126,7 +129,7 @@ xlabel('Trees Grown','Fontname', 'Arial','FontSize',12);
 ylabel('Error','Fontname', 'Arial','FontSize',12);
 set(gca,'linewidth',1,'fontsize',12,'fontname','Arial');
 grid on;
-%}
+
 
 %% Visualise two of the generated decision trees. 
 % Define Bagging Parameters
@@ -145,11 +148,6 @@ view(B.Trees{2}, 'Mode', 'graph');
 
 %% feature importance
 featureImportance = B.OOBPermutedPredictorDeltaError;
-
-% 显示特征重要性
-disp('Feature Importance:');
-disp(featureImportance);
-
 % 可视化特征重要性
 figure;
 bar(featureImportance);
@@ -159,7 +157,7 @@ title('Feature Importance');
 
 %% Display a confusion matrix and comment on the overall accuracy.
 C = confusionmat(y_test, y_pred);
-order = {'Seizure','NonSeizure'};
+order = {'Seizure','NonSeizure','PreSeizure'};
 
 % Display a confusion matrix 
 figure;
@@ -173,26 +171,36 @@ ylabel('True Label');
 for i = 1:length(y_test)
     if strcmp(y_test(i), 'Seizure') == 1
         y_test_temp(i)=1;
-    else
+    elseif strcmp(y_test(i), 'NonSeizure') == 1
         y_test_temp(i)=2;
+    else
+        y_test_temp(i)=3;
     end
 end
 
 for i = 1:length(y_pred)
     if strcmp(y_pred(i), 'Seizure') == 1
         y_pred_temp(i)=1;
-    else
+    elseif strcmp(y_pred(i), 'NonSeizure') == 1
         y_pred_temp(i)=2;
+    else
+        y_pred_temp(i)=3;
     end
 end
 
-[Acc,Sen,Spe]=ConMax(y_test_temp,y_pred_temp);
-Perfomance=[Acc Sen Spe];
-disp('Accuracy Sensitivity Specificity');
-disp(Perfomance)
-disp('----------------');
 
 accuracy = sum(strcmp(y_test, y_pred)) / numel(y_test);
 disp(['Overall accuracy: ', num2str(accuracy)]);
 disp('----------------');
 
+incorrect_indices = find(~strcmp(y_test, y_pred));
+
+%for m=1:length(incorrect_indices)
+for m=1:5
+    original_incorrect_indices=idxTestOriginal(incorrect_indices(m));
+    idx_segment = floor(original_incorrect_indices / num_of_channels);
+    idx_channel = mod(original_incorrect_indices, num_of_channels);
+    disp("The incorrect prediction is from");
+    disp(['Segment ', num2str(idx_segment), ', channel ', num2str(idx_channel)]);
+    disp("----------------");
+end
