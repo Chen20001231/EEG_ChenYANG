@@ -1,22 +1,10 @@
 clc;clear;close all;
+num_of_channels = 30;
 
+addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\data
+addpath functions\
+y1 = string(table2array(readtable('0_segments.xlsx','Range','C1:C42')));
+y1 = repmat(y1, num_of_channels, 1);
 
-load fisheriris
-inds = ~strcmp(species,'setosa');
-X = meas(inds,3:4);
-y = species(inds);
-
-
-SVMModel = fitcsvm(X,y);
-
-
-classOrder = SVMModel.ClassNames;
-
-
-sv = SVMModel.SupportVectors;
-figure
-gscatter(X(:,1),X(:,2),y)
-hold on
-plot(sv(:,1),sv(:,2),'ko','MarkerSize',10)
-legend('versicolor','virginica','Support Vector')
-hold off
+y2 = string(table2array(readtable('0_segments.xlsx','Range','C42:C129')));
+y2 = repmat(y2, num_of_channels, 1);

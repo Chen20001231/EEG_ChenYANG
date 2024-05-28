@@ -21,26 +21,35 @@ addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\data
 addpath functions\
 fs = 250;
 fs_new = 250;
+num_of_channels = 30;
 
 %% Start
-counter = 0;
+counter = 1;
 for i = 1:128
-    counter = counter + 1;
     %% Load data
     filename = ['x', num2str(i), '.mat'];
     load(filename);
 
     %% change sampling frequency
     [P,Q] = rat(fs_new/fs);
-    data = EEGdata(:,1);
-    data = resample(data,P,Q);
 
-    %% feature extraction
-    feature(:,counter) = feature_extraction(data);
+    for j = 1:num_of_channels
+        data = EEGdata(:,j); % Channel
+        data = resample(data,P,Q);
+        %% feature extraction
+        feature(:,counter) = feature_extraction(data);
+        counter = counter + 1;
+    end
+
 
 end
-
-
+%{
+[cd1, cd2, cd3, cd4, cd5, cd6, cd7, cd8, ca1] = wavelet(data);
+minVal = min(ca1);
+maxVal = max(ca1);
+ca1 = 255*rescale(ca1, 'InputMin', minVal, 'InputMax', maxVal);
+ca1 = round(ca1);
+%}
 %% PCA
 %{
 % Standardisation of data
@@ -76,9 +85,10 @@ x = feature';
 
 %% add label
 
-y1 = string(table2array(readtable('0_segments.xlsx','Range','C2:C42')));
-y2 = string(table2array(readtable('0_segments.xlsx','Range','C43:C129')));
-
+y1 = string(table2array(readtable('0_segments.xlsx','Range','C1:C42')));
+y1 = repmat(y1, num_of_channels, 1);
+y2 = string(table2array(readtable('0_segments.xlsx','Range','C42:C129')));
+y2 = repmat(y2, num_of_channels, 1);
 
 y = [y1;y2];
 %data_labeled = [x, y];
@@ -124,7 +134,7 @@ numTrees = 50; % Set number of trees
 opts = statset('UseParallel',true); % Parallel computing
     
 % Use decision trees
-B = TreeBagger(numTrees, x_train, y_train, 'Method', 'classification', 'Options', opts);
+B = TreeBagger(numTrees, x_train, y_train, 'Method', 'classification', 'Options', opts,'OOBPredictorImportance', 'on');
 % B = TreeBagger(numTrees, x_train, y_train, 'Method', 'classification', 'Options', opts, 'MaxNumSplits', 5);
 
 % Predicted data
@@ -132,6 +142,20 @@ y_pred = predict(B, x_test);
 
 view(B.Trees{1}, 'Mode', 'graph');
 view(B.Trees{2}, 'Mode', 'graph');
+
+%% feature importance
+featureImportance = B.OOBPermutedPredictorDeltaError;
+
+% 显示特征重要性
+disp('Feature Importance:');
+disp(featureImportance);
+
+% 可视化特征重要性
+figure;
+bar(featureImportance);
+xlabel('Feature Index');
+ylabel('Out-of-Bag Permuted Predictor Delta Error');
+title('Feature Importance');
 
 %% Display a confusion matrix and comment on the overall accuracy.
 C = confusionmat(y_test, y_pred);
