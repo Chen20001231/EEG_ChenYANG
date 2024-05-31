@@ -106,7 +106,7 @@ y_test = y(~idxTrain,:);
 idxTestOriginal = find(~idxTrain);
 
 %% Number of decision trees
-
+%{
 for i = 1:50
     % Define Bagging Parameters
     numTrees = i; % Set number of trees
@@ -129,9 +129,10 @@ xlabel('Trees Grown','Fontname', 'Arial','FontSize',12);
 ylabel('Error','Fontname', 'Arial','FontSize',12);
 set(gca,'linewidth',1,'fontsize',12,'fontname','Arial');
 grid on;
+%}
 
+%% Visualise two of the generated decision trees.
 
-%% Visualise two of the generated decision trees. 
 % Define Bagging Parameters
 numTrees = 50; % Set number of trees
 opts = statset('UseParallel',true); % Parallel computing
@@ -145,6 +146,7 @@ y_pred = predict(B, x_test);
 
 view(B.Trees{1}, 'Mode', 'graph');
 view(B.Trees{2}, 'Mode', 'graph');
+
 
 %% feature importance
 featureImportance = B.OOBPermutedPredictorDeltaError;
@@ -195,12 +197,80 @@ disp('----------------');
 
 incorrect_indices = find(~strcmp(y_test, y_pred));
 
-%for m=1:length(incorrect_indices)
-for m=1:5
-    original_incorrect_indices=idxTestOriginal(incorrect_indices(m));
-    idx_segment = floor(original_incorrect_indices / num_of_channels);
-    idx_channel = mod(original_incorrect_indices, num_of_channels);
-    disp("The incorrect prediction is from");
-    disp(['Segment ', num2str(idx_segment), ', channel ', num2str(idx_channel)]);
-    disp("----------------");
+idx_segment=[];
+idx_channel=[];
+for n=1:length(incorrect_indices)
+    original_incorrect_indices(n)=idxTestOriginal(incorrect_indices(n))-1;
+    idx_segment(n) = ceil(original_incorrect_indices(n) / num_of_channels);
+    idx_channel(n) = mod(original_incorrect_indices(n), num_of_channels)+1;
+    signal_true(n) = y_test(incorrect_indices(n));
+    signal_predicted(n) = y_pred(incorrect_indices(n));
 end
+
+T = table((1:length(incorrect_indices))', idx_segment', idx_channel', signal_true', signal_predicted', 'VariableNames', {'Index', 'segment', 'channel', 'true value', 'predicted value'});
+% 指定Excel文件的名称
+filename2 = 'Incorrect_prediction_info.xlsx';
+% 将表格写入Excel文件
+writetable(T, filename2);
+% 显示完成信息
+disp(['Data written to ', filename2]);
+
+%% Visualisation of error prediction by single channel
+
+counter = 1;
+for k = 1:length(incorrect_indices)
+    idx_original_incorrect(k)=idxTestOriginal(incorrect_indices(k))-1;
+    idx_segment_temp(k) = ceil(idx_original_incorrect(k) / num_of_channels);
+    idx_channel_temp(k) = mod(idx_original_incorrect(k), num_of_channels)+1;
+    signal_true_temp(k) = y_test(incorrect_indices(k));
+    signal_predicted_temp(k) = y_pred(incorrect_indices(k));
+    filename3 = ['x', num2str(idx_segment_temp(k)), '.mat'];
+    load(filename3);
+    data_plot = EEGdata(:,idx_channel_temp(k)); % Channel
+    figure('Visible', 'off');
+    plot(data_plot,'b');
+    hold on;
+    xlabel('Samples');
+    ylabel('Amplitude');
+    title(['EEG Signals from segment. ', num2str(idx_segment_temp(k)),', channel.',num2str(idx_channel_temp(k))]);
+    % 获取当前轴的限制
+    xLimits = xlim;
+    yLimits = ylim;0
+    % 定义文字的位置（绘图的左上角）
+    xPos = xLimits(1) + 0.05 * (xLimits(2) - xLimits(1)); % x 坐标，距离左边界 5%
+    yPos = yLimits(2) - 0.05 * (yLimits(2) - yLimits(1)); % y 坐标，距离上边界 5%
+    % 添加文字
+    str_temp = strcat(signal_true_temp(k),'>>',signal_predicted_temp(k));
+    text(xPos, yPos, str_temp, 'Color', 'black', 'FontSize', 12, 'FontWeight', 'bold', 'BackgroundColor', 'white');
+    grid on;
+    hold off;
+    % 定义保存路径和文件名
+    filePath = string(['E:\Imperial\Spring\Project\GitKraken\fig_incorrect\',num2str(counter),'.png']);
+    counter = counter + 1;
+    % 保存绘图到指定路径
+    saveas(gcf, filePath);
+end
+
+%% Visualisation of error prediction by segment
+idx_segment_plot = 36;
+filename3 = ['x', num2str(idx_segment_plot), '.mat'];
+load(filename3);
+
+figure;
+% 定义偏移量，避免信号重叠
+offset = 100;
+% 遍历每个通道并绘制
+hold on;
+%for i = 24
+for i = 1:num_of_channels
+    plot(EEGdata(:, i) + (i-1) * offset);
+end
+hold off;
+
+% 添加标签和标题
+xlabel('Samples');
+ylabel('Amplitude');
+title(['EEG Signals from segment. ', num2str(idx_segment_plot)]);
+grid on;
+ylim([-offset, (num_of_channels-1) * offset + offset]);
+

@@ -1,10 +1,14 @@
 clc;clear;close all;
 num_of_channels = 30;
 
-addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\data
+addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\Three_classes\data\
 addpath functions\
-y1 = string(table2array(readtable('0_segments.xlsx','Range','C1:C42')));
-y1 = repmat(y1, num_of_channels, 1);
 
-y2 = string(table2array(readtable('0_segments.xlsx','Range','C42:C129')));
-y2 = repmat(y2, num_of_channels, 1);
+% 定义一个已知数组
+array = [1, 2, 3, 4, 5];
+
+% 使用 for 循环遍历数组的每个元素
+for k = array
+    % 在此处添加你的代码，使用 k 进行操作
+    disp(['当前 k 的值是: ', num2str(k)]);
+end
