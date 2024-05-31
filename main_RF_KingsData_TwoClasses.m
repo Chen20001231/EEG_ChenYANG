@@ -17,7 +17,7 @@ clc;clear;close all;
 % ca8 512-1024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% add path and parametre setting
-addpath E:\Imperial\Spring\Project\GitKraken\makeDatasets\Two_classes\data\
+addpath E:\Imperial\Spring\Project\GitKraken\EEG_ChenYANG_MakingDatasets\Two_classes\data
 addpath functions\
 fs = 250;
 fs_new = 250;
