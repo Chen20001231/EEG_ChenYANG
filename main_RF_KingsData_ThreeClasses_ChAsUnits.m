@@ -274,3 +274,6 @@ title(['EEG Signals from segment. ', num2str(idx_segment_plot)]);
 grid on;
 ylim([-offset, (num_of_channels-1) * offset + offset]);
 
+
+
+

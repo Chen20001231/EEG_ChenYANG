@@ -96,14 +96,16 @@ y = [y1;y2;y3];
 %data_labeled = [x, y];
 
 %% Partition data for cross-validation
-cv = cvpartition(length(y), 'HoldOut', 0.35);
+cv = cvpartition(length(y)/num_of_channels, 'HoldOut', 0.35);
 idxTrain = training(cv);
-x_train = x(idxTrain,:);
-y_train = y(idxTrain,:);
-x_test = x(~idxTrain,:);
-y_test = y(~idxTrain,:);
+extended_idxTrain = repelem(idxTrain, num_of_channels); % 将数组的每个元素重复 30 次
 
-idxTestOriginal = find(~idxTrain);
+x_train = x(extended_idxTrain,:);
+y_train = y(extended_idxTrain,:);
+x_test = x(~extended_idxTrain,:);
+y_test = y(~extended_idxTrain,:);
+
+idxTestOriginal = find(~extended_idxTrain);
 
 %% Number of decision trees
 %{
@@ -169,31 +171,11 @@ title('Confusion Matrix');
 xlabel('Predicted Label');
 ylabel('True Label');
 
-% Displat the overall accuracy
-for i = 1:length(y_test)
-    if strcmp(y_test(i), 'Seizure') == 1
-        y_test_temp(i)=1;
-    elseif strcmp(y_test(i), 'NonSeizure') == 1
-        y_test_temp(i)=2;
-    else
-        y_test_temp(i)=3;
-    end
-end
-
-for i = 1:length(y_pred)
-    if strcmp(y_pred(i), 'Seizure') == 1
-        y_pred_temp(i)=1;
-    elseif strcmp(y_pred(i), 'NonSeizure') == 1
-        y_pred_temp(i)=2;
-    else
-        y_pred_temp(i)=3;
-    end
-end
-
-
 accuracy = sum(strcmp(y_test, y_pred)) / numel(y_test);
 disp(['Overall accuracy: ', num2str(accuracy)]);
 disp('----------------');
+
+%% Output incorrect info
 
 incorrect_indices = find(~strcmp(y_test, y_pred));
 
@@ -209,50 +191,33 @@ end
 
 T = table((1:length(incorrect_indices))', idx_segment', idx_channel', signal_true', signal_predicted', 'VariableNames', {'Index', 'segment', 'channel', 'true value', 'predicted value'});
 % 指定Excel文件的名称
-filename2 = 'Incorrect_prediction_info.xlsx';
+filename2 = 'Incorrect_prediction_info_SegAsUnits.xlsx';
 % 将表格写入Excel文件
 writetable(T, filename2);
 % 显示完成信息
 disp(['Data written to ', filename2]);
 
-%% Visualisation of error prediction by single channel
+%% 分segment统计
+y_test_seg = y_test(1:num_of_channels:end);
 
-counter = 1;
-for k = 1:length(incorrect_indices)
-    idx_original_incorrect(k)=idxTestOriginal(incorrect_indices(k))-1;
-    idx_segment_temp(k) = ceil(idx_original_incorrect(k) / num_of_channels);
-    idx_channel_temp(k) = mod(idx_original_incorrect(k), num_of_channels)+1;
-    signal_true_temp(k) = y_test(incorrect_indices(k));
-    signal_predicted_temp(k) = y_pred(incorrect_indices(k));
-    filename3 = ['x', num2str(idx_segment_temp(k)), '.mat'];
-    load(filename3);
-    data_plot = EEGdata(:,idx_channel_temp(k)); % Channel
-    figure('Visible', 'off');
-    plot(data_plot,'b');
-    hold on;
-    xlabel('Samples');
-    ylabel('Amplitude');
-    title(['EEG Signals from segment. ', num2str(idx_segment_temp(k)),', channel.',num2str(idx_channel_temp(k))]);
-    % 获取当前轴的限制
-    xLimits = xlim;
-    yLimits = ylim;0
-    % 定义文字的位置（绘图的左上角）
-    xPos = xLimits(1) + 0.05 * (xLimits(2) - xLimits(1)); % x 坐标，距离左边界 5%
-    yPos = yLimits(2) - 0.05 * (yLimits(2) - yLimits(1)); % y 坐标，距离上边界 5%
-    % 添加文字
-    str_temp = strcat(signal_true_temp(k),'>>',signal_predicted_temp(k));
-    text(xPos, yPos, str_temp, 'Color', 'black', 'FontSize', 12, 'FontWeight', 'bold', 'BackgroundColor', 'white');
-    grid on;
-    hold off;
-    % 定义保存路径和文件名
-    filePath = string(['E:\Imperial\Spring\Project\GitKraken\fig_incorrect\',num2str(counter),'.png']);
-    counter = counter + 1;
-    % 保存绘图到指定路径
-    saveas(gcf, filePath);
-end
+grouped_data = reshape(y_pred, num_of_channels, []);  % 每一列代表一个组，共 30 列
+counts = sum(strcmp(grouped_data, 'Seizure'));  % 统计每个组中 1 出现的次数
+counts = [counts; sum(strcmp(grouped_data, 'NonSeizure'))];  % 统计每个组中 2 出现的次数
+counts = [counts; sum(strcmp(grouped_data, 'PreSeizure'))];  % 统计每个组中 3 出现的次数
+
+y_test_segNo = find(~idxTrain == 1);
+
+T3 = table(y_test_segNo, y_test_seg, counts(1,:)', counts(2,:)', counts(3,:)', 'VariableNames', {'Segment index','True value', '#ch pre as Seisure', '#ch pre as NonSeisure', '#ch pre as PreSeisure'});
+% 指定Excel文件的名称
+filename3 = 'Incorrect_prediction_info_SegAsUnits_2.xlsx';
+% 将表格写入Excel文件
+writetable(T3, filename3);
+% 显示完成信息
+disp(['Data written to ', filename3]);
+
 
 %% Visualisation of error prediction by segment
-idx_segment_plot = 36;
+idx_segment_plot = 16;
 filename3 = ['x', num2str(idx_segment_plot), '.mat'];
 load(filename3);
 
@@ -273,4 +238,6 @@ ylabel('Amplitude');
 title(['EEG Signals from segment. ', num2str(idx_segment_plot)]);
 grid on;
 ylim([-offset, (num_of_channels-1) * offset + offset]);
+
+
 
