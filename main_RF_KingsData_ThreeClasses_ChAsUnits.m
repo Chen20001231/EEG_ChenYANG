@@ -235,7 +235,7 @@ for k = 1:length(incorrect_indices)
     title(['EEG Signals from segment. ', num2str(idx_segment_temp(k)),', channel.',num2str(idx_channel_temp(k))]);
     % 获取当前轴的限制
     xLimits = xlim;
-    yLimits = ylim;0
+    yLimits = ylim;
     % 定义文字的位置（绘图的左上角）
     xPos = xLimits(1) + 0.05 * (xLimits(2) - xLimits(1)); % x 坐标，距离左边界 5%
     yPos = yLimits(2) - 0.05 * (yLimits(2) - yLimits(1)); % y 坐标，距离上边界 5%
