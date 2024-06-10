@@ -23,8 +23,8 @@ addpath functions\
 fs = 250;
 fs_new = 250;
 num_of_channels = 30;
-idx_testing_data_begin = 110;
-idx_testing_data_end = 164;
+idx_testing_data_begin = 97;
+idx_testing_data_end = 161;
 %% Start
 counter = 1;
 excel_table = readtable('0_segments.xlsx');
@@ -170,11 +170,11 @@ y_test_seg = y_test(1:num_of_channels:end);
 grouped_data = reshape(y_pred, num_of_channels, []);  % 每一列代表一个组，共 30 列
 counts = sum(strcmp(grouped_data, 'Seizure'));  % 统计每个组中 1 出现的次数
 counts = [counts; sum(strcmp(grouped_data, 'NonSeizure'))];  % 统计每个组中 2 出现的次数
-counts = [counts; sum(strcmp(grouped_data, 'PreSeizure'))];  % 统计每个组中 3 出现的次数
+counts = [counts; sum(strcmp(grouped_data, 'PeriIctalSignals'))];  % 统计每个组中 3 出现的次数
 
 y_test_segNo = find(~idxTrain == 1);
 
-T3 = table(y_test_segNo, y_test_seg, counts(1,:)', counts(2,:)', counts(3,:)', 'VariableNames', {'Segment index','True value', '#ch pre as Seisure', '#ch pre as NonSeisure', '#ch pre as PreSeisure'});
+T3 = table(y_test_segNo, y_test_seg, counts(1,:)', counts(2,:)', counts(3,:)', 'VariableNames', {'Segment index','True value', '#ch pre as Seisure', '#ch pre as NonSeisure', '#ch pre as PeriIctalSignals'});
 % 指定Excel文件的名称
 filename3 = 'Incorrect_prediction_info_SegAsUnits_2.xlsx';
 % 将表格写入Excel文件
