@@ -23,14 +23,25 @@ addpath functions\
 fs = 250;
 fs_new = 250;
 num_of_channels = 30;
+overlapping = 0.75;
+
+%idx_testing_data_begin = 1;
+%idx_testing_data_end = 47;
+
 idx_testing_data_begin = 97;
 idx_testing_data_end = 161;
+
+%idx_testing_data_begin = 152;
+%idx_testing_data_end = 168;
 %% Start
 counter = 1;
 excel_table = readtable('0_segments.xlsx');
 num_of_segments = height(excel_table);
 
+
 %% Start to extract features
+
+updateProgressBar(0);
 for i = 1:num_of_segments
     %% Load data
     filename = ['x', num2str(i), '.mat'];
@@ -46,8 +57,8 @@ for i = 1:num_of_segments
         feature(:,counter) = feature_extraction(data);
         counter = counter + 1;
     end
-
-
+progressPercent = (i/num_of_segments)*90;
+updateProgressBar(progressPercent);
 end
 %{
 [cd1, cd2, cd3, cd4, cd5, cd6, cd7, cd8, ca1] = wavelet(data);
@@ -91,6 +102,7 @@ x = [PC1, PC2, PC3, PC4, PC5];
 x = feature';
 
 %% add label
+
 y = string(excel_table.Category);
 y = repelem(y, num_of_channels); % 将数组的每个元素重复 30 次
 
@@ -183,7 +195,63 @@ writetable(T3, filename3);
 disp(['Data written to ', filename3]);
 
 
+%% 画图
+% 创建图形窗口
+figure;
+% 绘制第一个变量
+subplot(2,1,1);
+plot(y_test_segNo, counts(1,:), 'r:', 'LineWidth', 2);  % 红色实线
+hold on;  % 保持当前图形
+plot(y_test_segNo, counts(2,:), 'b:', 'LineWidth', 2); % 绿色虚线
+plot(y_test_segNo, counts(3,:), 'm:', 'LineWidth', 2);  % 蓝色点线
+xlim([min(y_test_segNo) max(y_test_segNo)]);
+% 添加图例
+legend('Seizure', 'NonSeizure', 'PeriIctalSignals');
+% 添加坐标轴标签和标题
+xlabel('Segment index');
+ylabel('Number of channels');
+title(' ');
+
+grid on;
+hold off;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+overlapping = 0.75;
+
+idx_segment_plot_start = min(y_test_segNo);
+idx_segment_plot_end = max(y_test_segNo);
+
+EEGdataplot = [];
+for q = idx_segment_plot_start:(1/(1-overlapping)):idx_segment_plot_end
+    filename3 = ['x', num2str(q), '.mat'];
+    load(filename3);
+    EEGdataplot = [EEGdataplot; EEGdata];
+end
+set(gca,'linewidth',1,'fontsize',12,'fontname','Arial');
+
+subplot(2,1,2);
+% 定义偏移量，避免信号重叠
+offset = 100;
+% 遍历每个通道并绘制
+hold on;
+%for i = 24
+for i = 1:num_of_channels
+    plot(EEGdataplot(:, i) + (i-1) * offset);
+end
+hold off;
+
+% 添加标签和标题
+xlabel('Samples');
+ylabel('Amplitude');
+title([' ']);
+grid on;
+
+xlim([1,length(EEGdataplot)]);
+ylim([-offset, (num_of_channels-1) * offset + offset]);
+set(gca,'linewidth',1,'fontsize',12,'fontname','Arial');
+
+
 %% Visualisation of error prediction by segment
+%{
 idx_segment_plot = 16;
 filename3 = ['x', num2str(idx_segment_plot), '.mat'];
 load(filename3);
@@ -205,6 +273,6 @@ ylabel('Amplitude');
 title(['EEG Signals from segment. ', num2str(idx_segment_plot)]);
 grid on;
 ylim([-offset, (num_of_channels-1) * offset + offset]);
-
-
+%}
+updateProgressBar(100);
 
