@@ -17,7 +17,9 @@ clc;clear;close all;
 % ca8 512-1024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% add path and parametre setting
-addpath E:\Imperial\Spring\Project\GitKraken\EEG_ChenYANG_MakingDatasets\Manually_Selecting_Testsets\DP141_2\data\
+addpath E:\Imperial\Spring\Project\GitKraken\EEG_ChenYANG_MakingDatasets\Local_Average_Reference\data_bipolar\
+%addpath E:\Imperial\Spring\Project\GitKraken\EEG_ChenYANG_MakingDatasets\Local_Average_Reference\data_LAR\
+%addpath E:\Imperial\Spring\Project\GitKraken\EEG_ChenYANG_MakingDatasets\Manually_Selecting_Testsets\DP141_2\data\
 addpath functions\
 
 fs = 250;
@@ -28,11 +30,11 @@ overlapping = 0.75;
 %idx_testing_data_begin = 1;
 %idx_testing_data_end = 47;
 
-idx_testing_data_begin = 97;
-idx_testing_data_end = 161;
+%idx_testing_data_begin = 97;
+%idx_testing_data_end = 161;
 
-%idx_testing_data_begin = 152;
-%idx_testing_data_end = 168;
+idx_testing_data_begin = 152;
+idx_testing_data_end = 168;
 %% Start
 counter = 1;
 excel_table = readtable('0_segments.xlsx');
