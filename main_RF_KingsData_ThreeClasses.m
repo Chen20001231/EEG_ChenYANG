@@ -30,11 +30,11 @@ overlapping = 0.75;
 %idx_testing_data_begin = 1;
 %idx_testing_data_end = 47;
 
-%idx_testing_data_begin = 97;
-%idx_testing_data_end = 161;
+idx_testing_data_begin = 97;
+idx_testing_data_end = 161;
 
-idx_testing_data_begin = 152;
-idx_testing_data_end = 168;
+%idx_testing_data_begin = 152;
+%idx_testing_data_end = 168;
 %% Start
 counter = 1;
 excel_table = readtable('0_segments.xlsx');
@@ -59,7 +59,7 @@ for i = 1:num_of_segments
         feature(:,counter) = feature_extraction(data);
         counter = counter + 1;
     end
-progressPercent = (i/num_of_segments)*90;
+progressPercent = (i/num_of_segments)*40;
 updateProgressBar(progressPercent);
 end
 %{
@@ -125,8 +125,38 @@ extended_idxTrain = repelem(idxTrain, num_of_channels); % 将数组的每个元�
 
 x_train = x(extended_idxTrain,:);
 y_train = y(extended_idxTrain,:);
-x_test = x(~extended_idxTrain,:);
-y_test = y(~extended_idxTrain,:);
+
+
+%% testing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+excel_table_testing = readtable('0_segments_testing.xlsx');
+num_of_segments_testing = height(excel_table_testing);
+
+
+counter = 1;
+data=[];
+feature=[];
+for i = 1:num_of_segments_testing
+    filename = ['y', num2str(i)];
+    load(filename);
+    [P,Q] = rat(fs_new/fs);
+    for j = 1:num_of_channels
+        data = EEGdata(:,j); % Channel
+        data = resample(data,P,Q);
+        feature(:,counter) = feature_extraction(data);
+        counter = counter + 1;
+    end
+progressPercent = 40+(i/num_of_segments_testing)*50;
+updateProgressBar(progressPercent);
+end
+
+x_test = feature';
+y_test = string(excel_table_testing.Category);
+y_test = repelem(y_test, num_of_channels); % 将数组的每个元素重复 30 次
+
+
+
+%x_test = x(~extended_idxTrain,:);
+%y_test = y(~extended_idxTrain,:);
 
 idxTestOriginal = find(~extended_idxTrain);
 
@@ -186,8 +216,8 @@ counts = sum(strcmp(grouped_data, 'Seizure'));  % 统计每个组中 1 出现的
 counts = [counts; sum(strcmp(grouped_data, 'NonSeizure'))];  % 统计每个组中 2 出现的次数
 counts = [counts; sum(strcmp(grouped_data, 'PeriIctalSignals'))];  % 统计每个组中 3 出现的次数
 
-y_test_segNo = find(~idxTrain == 1);
-
+%y_test_segNo = find(~idxTrain == 1);
+y_test_segNo = (1:num_of_segments_testing)';
 T3 = table(y_test_segNo, y_test_seg, counts(1,:)', counts(2,:)', counts(3,:)', 'VariableNames', {'Segment index','True value', '#ch pre as Seisure', '#ch pre as NonSeisure', '#ch pre as PeriIctalSignals'});
 % 指定Excel文件的名称
 filename3 = 'Incorrect_prediction_info_SegAsUnits_2.xlsx';
@@ -224,7 +254,7 @@ idx_segment_plot_end = max(y_test_segNo);
 
 EEGdataplot = [];
 for q = idx_segment_plot_start:(1/(1-overlapping)):idx_segment_plot_end
-    filename3 = ['x', num2str(q), '.mat'];
+    filename3 = ['y', num2str(q), '.mat'];
     load(filename3);
     EEGdataplot = [EEGdataplot; EEGdata];
 end
